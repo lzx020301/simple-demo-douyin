@@ -1,10 +1,9 @@
 package controller
 
 import (
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 type FeedResponse struct {
@@ -13,10 +12,11 @@ type FeedResponse struct {
 	NextTime  int64   `json:"next_time,omitempty"`
 }
 
-func Feed(c *gin.Context){
-	c.JSON(http.StatusOK ,FeedResponse{
-		Response: Response{StatusCode: 0 ,StatusMsg: "加载成功"},
+// Feed same demo video list for every request
+func Feed(c *gin.Context) {
+	c.JSON(http.StatusOK, FeedResponse{
+		Response:  Response{StatusCode: 0},
 		VideoList: DemoVideos,
-		NextTime: time.Now().Unix(),
+		NextTime:  time.Now().Unix(),
 	})
 }
