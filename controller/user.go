@@ -1,8 +1,10 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 	//"sync/atomic"
 )
 
@@ -46,9 +48,11 @@ func Register(c *gin.Context) {
 
 	token := username + password
 
-	if _, exist := usersLoginInfo[token]; exist {
+	//err := GLOBAL_DB.Where("name = ?" ,username).Find(&user).Error
+
+	if  err := GLOBAL_DB.Where("name = ?" ,username).Find(&user).Error;err == nil {
 		c.JSON(http.StatusOK, UserLoginResponse{
-			Response: Response{StatusCode: 1, StatusMsg: "User already exist"},
+			Response: Response{StatusCode: 1, StatusMsg: "用户已存在"},
 		})
 	} else {
 		//atomic.AddInt64(&userIdSequence, 1)
@@ -74,18 +78,30 @@ func Register(c *gin.Context) {
 func Login(c *gin.Context) {
 	username := c.Query("username")
 	password := c.Query("password")
+	var user User
+	var token2id Token2ID
 
 	token := username + password
 
-	if user, exist := usersLoginInfo[token]; exist {
-		c.JSON(http.StatusOK, UserLoginResponse{
-			Response: Response{StatusCode: 0},
-			UserId:   user.UserId,
-			Token:    token,
-		})
+	if err := GLOBAL_DB.Where("name = ?" ,username).Find(&user).Error;err == nil {
+		GLOBAL_DB.Model(&Token2ID{}).Where("id = ?" ,user.UserId).Find(&token2id)
+		fmt.Println("token2id token : " ,token2id.Token)
+		fmt.Println("token : " ,token)
+		if token == token2id.Token {
+				c.JSON(http.StatusOK, UserLoginResponse{
+					Response: Response{StatusCode: 0},
+					UserId:   user.UserId,
+					Token:    token2id.Token,
+				})
+		}else{
+			c.JSON(http.StatusOK, UserLoginResponse{
+				Response: Response{StatusCode: 1, StatusMsg: "用户名或密码错误"},
+			})
+		}
+		
 	} else {
 		c.JSON(http.StatusOK, UserLoginResponse{
-			Response: Response{StatusCode: 1, StatusMsg: "User doesn't exist"},
+			Response: Response{StatusCode: 1, StatusMsg: "用户已存在"},
 		})
 	}
 }
