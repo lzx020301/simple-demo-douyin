@@ -14,6 +14,7 @@ type FeedResponse struct {
 
 // Feed same demo video list for every request
 func Feed(c *gin.Context) {
+	GLOBAL_DB.AutoMigrate(&Token2ID{})
 	c.JSON(http.StatusOK, FeedResponse{
 		Response:  Response{StatusCode: 0},
 		VideoList: DemoVideos,

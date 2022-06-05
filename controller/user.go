@@ -3,23 +3,28 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"sync/atomic"
+	//"sync/atomic"
 )
 
 // usersLoginInfo use map to store user info, and key is username+password for demo
 // user data will be cleared every time the server starts
 // test data: username=zhanglei, password=douyin
 var usersLoginInfo = map[string]User{
-	"zhangleidouyin": {
-		Id:            1,
-		Name:          "zhanglei",
+	"yfldouyin": {
+		UserId:            1,
+		Name:          "游飞龙",
 		FollowCount:   10,
 		FollowerCount: 5,
 		IsFollow:      true,
 	},
 }
 
-var userIdSequence = int64(1)
+var UserIDinfo = make(map[int64]User)
+
+var UserIDsequence int64
+
+
+//var userIdSequence = int64(1)
 
 type UserLoginResponse struct {
 	Response
@@ -33,6 +38,9 @@ type UserResponse struct {
 }
 
 func Register(c *gin.Context) {
+	var user User
+	GLOBAL_DB.Model(&User{}).Last(&user)
+	UserIDsequence = user.UserId + 1
 	username := c.Query("username")
 	password := c.Query("password")
 
@@ -43,15 +51,21 @@ func Register(c *gin.Context) {
 			Response: Response{StatusCode: 1, StatusMsg: "User already exist"},
 		})
 	} else {
-		atomic.AddInt64(&userIdSequence, 1)
+		//atomic.AddInt64(&userIdSequence, 1)
 		newUser := User{
-			Id:   userIdSequence,
+			UserId:   UserIDsequence,
 			Name: username,
 		}
+		newToken2ID := Token2ID{
+			Token: token,
+			ID: UserIDsequence,
+		}
+		GLOBAL_DB.Create(&newUser)
+		GLOBAL_DB.Create(&newToken2ID)
 		usersLoginInfo[token] = newUser
 		c.JSON(http.StatusOK, UserLoginResponse{
 			Response: Response{StatusCode: 0},
-			UserId:   userIdSequence,
+			UserId:   UserIDsequence,
 			Token:    username + password,
 		})
 	}
@@ -66,7 +80,7 @@ func Login(c *gin.Context) {
 	if user, exist := usersLoginInfo[token]; exist {
 		c.JSON(http.StatusOK, UserLoginResponse{
 			Response: Response{StatusCode: 0},
-			UserId:   user.Id,
+			UserId:   user.UserId,
 			Token:    token,
 		})
 	} else {
@@ -76,17 +90,36 @@ func Login(c *gin.Context) {
 	}
 }
 
+type Token2ID struct{
+	Token string
+	ID int64
+}
+
 func UserInfo(c *gin.Context) {
 	token := c.Query("token")
 
-	if user, exist := usersLoginInfo[token]; exist {
-		c.JSON(http.StatusOK, UserResponse{
-			Response: Response{StatusCode: 0},
-			User:     user,
-		})
-	} else {
-		c.JSON(http.StatusOK, UserResponse{
-			Response: Response{StatusCode: 1, StatusMsg: "User doesn't exist"},
-		})
-	}
+	var id Token2ID
+	GLOBAL_DB.Where("token = ?" ,token).Find(&id)
+
+	var users User
+
+	GLOBAL_DB.First(&users ,id.ID)
+
+	//user, exist := usersLoginInfo[token]
+
+	// if  exist {
+	// 	c.JSON(http.StatusOK, UserResponse{
+	// 		Response: Response{StatusCode: 0},
+	// 		User:     users,
+	// 	})
+	// } else {
+	// 	c.JSON(http.StatusOK, UserResponse{
+	// 		Response: Response{StatusCode: 1, StatusMsg: "请先登录"},
+	// 	})
+	// }
+
+	c.JSON(http.StatusOK, UserResponse{
+		Response: Response{StatusCode: 0},
+		User:     users,
+	})
 }

@@ -9,6 +9,9 @@ func initRouter(r *gin.Engine) {
 	// public directory is used to serve static resources
 	r.Static("/static", "./public")
 
+	controller.SqlLianjie()
+	controller.Ali_lianjie()
+
 	apiRouter := r.Group("/douyin")
 
 	// basic apis
