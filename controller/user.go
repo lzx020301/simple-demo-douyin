@@ -13,7 +13,7 @@ import (
 // test data: username=zhanglei, password=douyin
 var usersLoginInfo = map[string]User{
 	"yfldouyin": {
-		UserId:            1,
+		UserId:        1,
 		Name:          "游飞龙",
 		FollowCount:   10,
 		FollowerCount: 5,
@@ -24,7 +24,6 @@ var usersLoginInfo = map[string]User{
 var UserIDinfo = make(map[int64]User)
 
 var UserIDsequence int64
-
 
 //var userIdSequence = int64(1)
 
@@ -47,22 +46,21 @@ func Register(c *gin.Context) {
 	password := c.Query("password")
 
 	token := username + password
-
-	//err := GLOBAL_DB.Where("name = ?" ,username).Find(&user).Error
-
-	if  err := GLOBAL_DB.Where("name = ?" ,username).Find(&user).Error;err == nil {
+	var user2 User
+	GLOBAL_DB.Where("name = ?", username).Find(&user2)
+	if user2.UserId != 0 {
 		c.JSON(http.StatusOK, UserLoginResponse{
 			Response: Response{StatusCode: 1, StatusMsg: "用户已存在"},
 		})
 	} else {
 		//atomic.AddInt64(&userIdSequence, 1)
 		newUser := User{
-			UserId:   UserIDsequence,
-			Name: username,
+			UserId: UserIDsequence,
+			Name:   username,
 		}
 		newToken2ID := Token2ID{
 			Token: token,
-			ID: UserIDsequence,
+			ID:    UserIDsequence,
 		}
 		GLOBAL_DB.Create(&newUser)
 		GLOBAL_DB.Create(&newToken2ID)
@@ -83,56 +81,43 @@ func Login(c *gin.Context) {
 
 	token := username + password
 
-	if err := GLOBAL_DB.Where("name = ?" ,username).Find(&user).Error;err == nil {
-		GLOBAL_DB.Model(&Token2ID{}).Where("id = ?" ,user.UserId).Find(&token2id)
-		fmt.Println("token2id token : " ,token2id.Token)
-		fmt.Println("token : " ,token)
+	if err := GLOBAL_DB.Where("name = ?", username).Find(&user).Error; err == nil {
+		GLOBAL_DB.Model(&Token2ID{}).Where("id = ?", user.UserId).Find(&token2id)
+		fmt.Println("token2id token : ", token2id.Token)
+		fmt.Println("token : ", token)
 		if token == token2id.Token {
-				c.JSON(http.StatusOK, UserLoginResponse{
-					Response: Response{StatusCode: 0},
-					UserId:   user.UserId,
-					Token:    token2id.Token,
-				})
-		}else{
+			c.JSON(http.StatusOK, UserLoginResponse{
+				Response: Response{StatusCode: 0},
+				UserId:   user.UserId,
+				Token:    token2id.Token,
+			})
+		} else {
 			c.JSON(http.StatusOK, UserLoginResponse{
 				Response: Response{StatusCode: 1, StatusMsg: "用户名或密码错误"},
 			})
 		}
-		
+
 	} else {
 		c.JSON(http.StatusOK, UserLoginResponse{
-			Response: Response{StatusCode: 1, StatusMsg: "用户已存在"},
+			Response: Response{StatusCode: 1, StatusMsg: "用户未注册"},
 		})
 	}
 }
 
-type Token2ID struct{
+type Token2ID struct {
 	Token string
-	ID int64
+	ID    int64
 }
 
 func UserInfo(c *gin.Context) {
 	token := c.Query("token")
 
 	var id Token2ID
-	GLOBAL_DB.Where("token = ?" ,token).Find(&id)
+	GLOBAL_DB.Where("token = ?", token).Find(&id)
 
 	var users User
 
-	GLOBAL_DB.First(&users ,id.ID)
-
-	//user, exist := usersLoginInfo[token]
-
-	// if  exist {
-	// 	c.JSON(http.StatusOK, UserResponse{
-	// 		Response: Response{StatusCode: 0},
-	// 		User:     users,
-	// 	})
-	// } else {
-	// 	c.JSON(http.StatusOK, UserResponse{
-	// 		Response: Response{StatusCode: 1, StatusMsg: "请先登录"},
-	// 	})
-	// }
+	GLOBAL_DB.First(&users, id.ID)
 
 	c.JSON(http.StatusOK, UserResponse{
 		Response: Response{StatusCode: 0},

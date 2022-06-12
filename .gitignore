@@ -7,7 +7,6 @@
 *.dll
 *.so
 *.dylib
-controller/ali_oss.go
 
 # Test binary, built with `go test -c`
 *.test

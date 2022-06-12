@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+
 	//"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -46,7 +47,7 @@ func Publish(c *gin.Context) {
 		return
 	}
 
-	Bucket.PutObjectFromFile("public/" + filename ,saveFile)
+	Bucket.PutObjectFromFile("public/"+filename, saveFile)
 
 	c.JSON(http.StatusOK, Response{
 		StatusCode: 0,
@@ -54,32 +55,19 @@ func Publish(c *gin.Context) {
 	})
 }
 
-
 // PublishList all users have same publish video list
 func PublishList(c *gin.Context) {
 
 	GLOBAL_DB.AutoMigrate(&Video{})
 	token := c.Query("token")
-	//userId := c.Query("user_id")
 	var video []Video
-	
-
-	//_ ,exist := UsersLoginInfo[token]
-
-	//userid, _ := strconv.ParseInt(userId, 10, 64)
 
 	var userid Token2ID
-	GLOBAL_DB.Where("token = ?" ,token).Find(&userid)
-
-	GLOBAL_DB.Where("user_id = ?" ,userid.ID).Find(&video)
-
-	//VideoLists[UserIDinfo[userid]] = DemoVideos
+	GLOBAL_DB.Where("token = ?", token).Find(&userid)
+	GLOBAL_DB.Where("user_id = ?", userid.ID).Find(&video)
 
 	c.JSON(http.StatusOK, VideoListResponse{
-		Response: Response{StatusCode: 0},
-		//videoList: VideoLists[UserIDinfo[userid]],
-		 //VideoList: VideoLists[UserIDinfo[userid]],
-		//VideoList: Videolist,
+		Response:  Response{StatusCode: 0},
 		VideoList: video,
 	})
 }

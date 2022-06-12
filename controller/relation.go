@@ -28,6 +28,7 @@ type Followlist struct {
 // RelationAction no practical effect, just check if token is valid
 func RelationAction(c *gin.Context) {
 	token := c.Query("token")
+	actionType := c.Query("action_type")
 	touserid := c.Query("to_user_id")
 	var touser User
 	var user User
@@ -38,7 +39,8 @@ func RelationAction(c *gin.Context) {
 	GLOBAL_DB.Where("user_id = ?", to_userid).Find(&touser)
 	GLOBAL_DB.Where("user_id = ?", token2id.ID).Find(&user)
 	GLOBAL_DB.Where("from_userid = ?", token2id.ID).Find(&fromfollowlist)
-	if fromfollowlist.User.UserId == to_userid {
+	actiontype, _ := strconv.ParseInt(actionType, 10, 64)
+	if actiontype == 2 {
 		c.JSON(http.StatusOK, Response{
 			StatusCode: 1,
 			StatusMsg:  "取消关注",
@@ -57,12 +59,6 @@ func RelationAction(c *gin.Context) {
 			StatusMsg:  "关注成功",
 		})
 	}
-
-	// if _, exist := usersLoginInfo[token]; exist {
-	// 	c.JSON(http.StatusOK, Response{StatusCode: 0})
-	// } else {
-	// 	c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
-	// }
 }
 
 // FollowList all users have same follow list
@@ -75,7 +71,6 @@ func FollowList(c *gin.Context) {
 	var userlist User
 	var followuserlist []Followlist
 	var count int64
-	//GLOBAL_DB.Where("user_id = ?" ,userid).Find(&followuserlist).Count(&count)
 	fmt.Println(token2id.ID)
 	GLOBAL_DB.Model(&Followlist{}).Where("user_id = ?", token2id.ID).Find(&followuserlist).Distinct("to_userid").Count(&count).Group("user_id")
 	userlist2 := make([]User, count)
@@ -88,7 +83,6 @@ func FollowList(c *gin.Context) {
 		Response: Response{
 			StatusCode: 0,
 		},
-		// UserList: []User{DemoUser},
 		UserList: userlist2,
 	})
 }
